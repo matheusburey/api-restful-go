@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/matheusburey/api_restful/internal/usecase/users"
-	"github.com/matheusburey/api_restful/internal/utils"
+	"github.com/matheusburey/api-restful-go/internal/services"
+	"github.com/matheusburey/api-restful-go/internal/usecase/users"
+	"github.com/matheusburey/api-restful-go/internal/utils"
 )
 
 func (api *Api) HandlerGetAllUser(w http.ResponseWriter, r *http.Request) {

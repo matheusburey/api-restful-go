@@ -3,15 +3,17 @@ package users
 import (
 	"context"
 
-	"github.com/matheusburey/api_restful/internal/utils"
+	"github.com/matheusburey/api-restful-go/internal/utils"
 )
 
-type UserReqBody struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+type CreateUserReqBody struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password_hash"`
+	Bio      string `json:"bio"`
 }
 
-func (req UserReqBody) Valid(ctx context.Context) utils.Evaluator {
+func (req CreateUserReqBody) Valid(ctx context.Context) utils.Evaluator {
 	var eval utils.Evaluator
 
 	eval.CheckField(utils.NotBlank(req.Name), "name", "name is required")

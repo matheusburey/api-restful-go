@@ -2,10 +2,17 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/matheusburey/api_restful/internal/store/pgstore"
+	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrDuplicatedEmail = errors.New("email already registered")
 )
 
 type UsersService struct {

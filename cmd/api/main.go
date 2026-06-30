@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/matheusburey/api_restful/internal/api"
-	"github.com/matheusburey/api_restful/internal/services"
+	"github.com/matheusburey/api-restful-go/internal/api"
+	"github.com/matheusburey/api-restful-go/internal/services"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 
 	api := api.Api{
 		Router:       chi.NewMux(),
-		UsersService: *services.NewUsersService(p),
+		UsersService: services.NewUsersService(p),
 	}
 	api.BindRoutes()
 
