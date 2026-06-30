@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/pgxstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -29,6 +32,11 @@ func main() {
 	if err := p.Ping(ctx); err != nil {
 		panic(err)
 	}
+	s := scs.New()
+	s.Store = pgxstore.New(p)
+	s.Lifetime = 24 * time.Hour
+	s.Cookie.HttpOnly = true
+	s.Cookie.SameSite = http.SameSiteLaxMode
 
 	api := api.Api{
 		Router:       chi.NewMux(),
