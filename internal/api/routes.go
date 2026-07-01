@@ -17,6 +17,10 @@ func (api *Api) BindRoutes() {
 				r.With(api.AuthMiddleware).Put("/", api.HandlerUpdateUser)
 				r.With(api.AuthMiddleware).Delete("/", api.HandlerDeleteUser)
 			})
+
+			r.Route("/products", func(r chi.Router) {
+				r.Post("/", api.HandlerCreateProduct)
+			})
 		})
 	})
 }
