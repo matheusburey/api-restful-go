@@ -28,6 +28,19 @@ func (e *Evaluator) CheckField(ok bool, key, message string) {
 	}
 }
 
+func NullStringNotBlank(v *string) bool {
+	if v != nil {
+		return NotBlank(*v)
+	}
+	return true
+}
+func NullStringMinLength(v *string, length int) bool {
+	if v != nil {
+		return MinLength(*v, length)
+	}
+	return true
+}
+
 func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
 }

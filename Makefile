@@ -19,7 +19,10 @@ help:
 	@echo "  make clean"
 
 migrate:
-	github.com/matheusburey/api-restful-go
+	go run cmd/terndotenv/main.go
+
+migrate-generate:
+	cd ./internal/store/pgstore/migrations && tern new $(name)
 
 sqlc:
 	sqlc generate -f ./internal/store/pgstore/sqlc.yml

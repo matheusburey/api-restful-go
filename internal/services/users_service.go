@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
@@ -12,7 +13,9 @@ import (
 )
 
 var (
-	ErrDuplicatedEmail = errors.New("email already registered")
+	ErrDuplicatedEmail    = errors.New("email already registered")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInternal           = errors.New("internal server error")
 )
 
 type UsersService struct {
@@ -20,41 +23,63 @@ type UsersService struct {
 	q *pgstore.Queries
 }
 
-func NewUsersService(p *pgxpool.Pool) *UsersService {
-	return &UsersService{p: p, q: pgstore.New(p)}
+func NewUsersService(p *pgxpool.Pool) UsersService {
+	return UsersService{p: p, q: pgstore.New(p)}
 }
 
-func (us *UsersService) CreateUser(ctx context.Context, name, email string) error {
-	u := pgstore.CreateUserParams{Name: name, Email: email}
-
-	if _, err := us.q.CreateUser(ctx, u); err != nil {
-		return err
+func (us *UsersService) CreateUser(ctx context.Context, name, email, bio, password string) (uuid.UUID, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return uuid.UUID{}, err
 	}
-	return nil
+
+	args := pgstore.CreateUserParams{Name: name, Email: email, PasswordHash: hash, Bio: bio}
+	userId, err := us.q.CreateUser(ctx, args)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return uuid.UUID{}, ErrDuplicatedEmail
+		}
+		return uuid.UUID{}, err
+	}
+	return userId, nil
 }
 
-func (us *UsersService) GetUserById(ctx context.Context, id uuid.UUID) (pgstore.User, error) {
-	u, err := us.q.GetUserById(ctx, id)
+func (us *UsersService) AuthenticateUser(ctx context.Context, email, password string) (uuid.UUID, error) {
+	u, err := us.q.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.UUID{}, ErrInvalidCredentials
+		}
+		return uuid.UUID{}, ErrInternal
+	}
+
+	err = bcrypt.CompareHashAndPassword(u.PasswordHash, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return uuid.UUID{}, ErrInvalidCredentials
+		}
+		return uuid.UUID{}, ErrInternal
+	}
+
+	return u.ID, nil
+}
+
+func (us *UsersService) UpdateUser(ctx context.Context, id uuid.UUID, name, email, bio string, password *string) (pgstore.User, error) {
+	new_u := pgstore.UpdateUserParams{ID: id, Name: name, Email: email, Bio: bio}
+	if password != nil {
+		hash, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+		if err != nil {
+			return pgstore.User{}, err
+		}
+		new_u.PasswordHash = hash
+	}
+	u, err := us.q.UpdateUser(ctx, new_u)
 	if err != nil {
 		return pgstore.User{}, err
 	}
-	return pgstore.User{ID: u.ID, Name: u.Name, Email: u.Email}, nil
-}
-
-func (us *UsersService) GetAllUsers(ctx context.Context) ([]pgstore.User, error) {
-	u, err := us.q.GetAllUsers(ctx)
-	if err != nil {
-		return nil, err
-	}
+	u.PasswordHash = nil
 	return u, nil
-}
-
-func (us *UsersService) UpdateUser(ctx context.Context, id uuid.UUID, name, email string) (pgstore.User, error) {
-	u, err := us.q.UpdateUser(ctx, pgstore.UpdateUserParams{ID: id, Name: name, Email: email})
-	if err != nil {
-		return pgstore.User{}, err
-	}
-	return pgstore.User{ID: u.ID, Name: u.Name, Email: u.Email}, nil
 }
 
 func (us *UsersService) DeleteUser(ctx context.Context, id uuid.UUID) error {
