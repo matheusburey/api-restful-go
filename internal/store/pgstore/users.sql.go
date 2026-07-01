@@ -13,7 +13,7 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users ("name", "email", "password_hash", "bio")
-    VALUES ($1, $2 , $3, $4)
+VALUES ($1, $2, $3, $4)
 RETURNING id
 `
 
@@ -37,7 +37,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UU
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users WHERE id = $1
+DELETE FROM users
+WHERE id = $1
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
@@ -46,7 +47,9 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password_hash, bio, created_at, updated_at FROM users WHERE email = $1
+SELECT id, name, email, password_hash, bio, created_at, updated_at
+FROM users
+WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -65,7 +68,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, email, password_hash, bio, created_at, updated_at FROM users WHERE id = $1
+SELECT id, name, email, password_hash, bio, created_at, updated_at
+FROM users
+WHERE id = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
@@ -85,8 +90,12 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
-    SET "name" = $2, "email" = $3, "bio" = $4, "password_hash" = COALESCE($5, password_hash), updated_at = now()
-    WHERE id = $1
+SET "name" = $2,
+    "email" = $3,
+    "bio" = $4,
+    "password_hash" = COALESCE($5, password_hash),
+    updated_at = NOW()
+WHERE id = $1
 RETURNING id, name, email, password_hash, bio, created_at, updated_at
 `
 
