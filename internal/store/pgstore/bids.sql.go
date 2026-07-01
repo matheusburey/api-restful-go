@@ -14,7 +14,7 @@ import (
 const createBid = `-- name: CreateBid :one
 INSERT INTO bids ("product_id", "user_id", "amount_cents")
 VALUES ($1, $2, $3)
-RETURNING id
+RETURNING id, product_id, user_id, amount_cents, created_at, updated_at
 `
 
 type CreateBidParams struct {
@@ -23,11 +23,18 @@ type CreateBidParams struct {
 	AmountCents int64     `json:"amount_cents"`
 }
 
-func (q *Queries) CreateBid(ctx context.Context, arg CreateBidParams) (uuid.UUID, error) {
+func (q *Queries) CreateBid(ctx context.Context, arg CreateBidParams) (Bid, error) {
 	row := q.db.QueryRow(ctx, createBid, arg.ProductID, arg.UserID, arg.AmountCents)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i Bid
+	err := row.Scan(
+		&i.ID,
+		&i.ProductID,
+		&i.UserID,
+		&i.AmountCents,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getBidsByProductID = `-- name: GetBidsByProductID :many

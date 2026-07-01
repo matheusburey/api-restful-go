@@ -1,7 +1,7 @@
 -- name: CreateBid :one
 INSERT INTO bids ("product_id", "user_id", "amount_cents")
 VALUES ($1, $2, $3)
-RETURNING id;
+RETURNING *;
 
 -- name: GetBidsByProductID :many
 SELECT *
