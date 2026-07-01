@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 func EncodeJSON[T any](w http.ResponseWriter, r *http.Request, status int, data T) error {
@@ -38,13 +36,4 @@ func DecodeJSON[T any](r *http.Request) (T, error) {
 		return data, err
 	}
 	return data, nil
-}
-
-func ValidateAndParseUUID(raw_id string) (uuid.UUID, error) {
-	if err := uuid.Validate(raw_id); err != nil {
-		return uuid.UUID{}, err
-	}
-
-	id := uuid.MustParse(raw_id)
-	return id, nil
 }

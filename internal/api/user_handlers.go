@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/matheusburey/api-restful-go/internal/services"
 	"github.com/matheusburey/api-restful-go/internal/usecase/users"
 	"github.com/matheusburey/api-restful-go/internal/utils"
@@ -31,7 +32,7 @@ func (api *Api) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		utils.EncodeJSON(w, r, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		return
 	}
-	api.Sessions.Put(r.Context(), "AuthenticatedUserID", user_id.String())
+	api.Sessions.Put(r.Context(), "AuthenticatedUserID", user_id)
 	utils.EncodeJSON(w, r, http.StatusOK, map[string]string{"message": "success"})
 }
 
@@ -66,15 +67,13 @@ func (api *Api) HandlerSignupUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) HandlerDeleteUser(w http.ResponseWriter, r *http.Request) {
-	auth_user_id := api.Sessions.GetString(r.Context(), "AuthenticatedUserID")
-	id, err := utils.ValidateAndParseUUID(auth_user_id)
-
-	if err != nil {
-		utils.EncodeJSON(w, r, http.StatusBadRequest, map[string]string{"error": "invalid id"})
+	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	if !ok {
+		utils.EncodeJSON(w, r, http.StatusUnauthorized, map[string]string{"error": "unauthorized "})
 		return
 	}
 
-	err = api.UsersService.DeleteUser(r.Context(), id)
+	err := api.UsersService.DeleteUser(r.Context(), id)
 
 	if err != nil {
 		utils.EncodeJSON(w, r, http.StatusNotFound, map[string]string{"error": "user not found"})
@@ -85,11 +84,9 @@ func (api *Api) HandlerDeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) {
-	auth_user_id := api.Sessions.GetString(r.Context(), "AuthenticatedUserID")
-	id, err := utils.ValidateAndParseUUID(auth_user_id)
-
-	if err != nil {
-		utils.EncodeJSON(w, r, http.StatusBadRequest, map[string]string{"error": "invalid id"})
+	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	if !ok {
+		utils.EncodeJSON(w, r, http.StatusUnauthorized, map[string]string{"error": "unauthorized "})
 		return
 	}
 	data, problems, err := utils.DecodeValidJSON[users.UpdateUserReqBody](r)
