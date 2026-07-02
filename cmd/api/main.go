@@ -12,6 +12,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/matheusburey/api-restful-go/internal/api"
@@ -46,6 +47,7 @@ func main() {
 		UsersService:   services.NewUsersService(p),
 		ProductService: services.NewProductService(p),
 		Sessions:       s,
+		WsUpgrade:      websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 	}
 	api.BindRoutes()
 
