@@ -6,7 +6,13 @@ import (
 	"net/http"
 )
 
-func EncodeJSON[T any](w http.ResponseWriter, r *http.Request, status int, data T) error {
+type Response struct {
+	Error   string `json:"error,omitempty"`
+	Message any    `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
+}
+
+func EncodeJSON(w http.ResponseWriter, status int, data Response) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
