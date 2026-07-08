@@ -31,12 +31,20 @@ func (api *Api) HandlerCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, _ := context.WithDeadline(context.Background(), data.AuctionEnd)
+	ctx, cancel := context.WithDeadline(context.Background(), data.AuctionEnd)
 	auctionRoom := services.NewAuctionRoom(ctx, product_id, api.BidsService)
-	go auctionRoom.Run()
+	go func() {
+		auctionRoom.Run()
+		cancel()
+	}()
 	api.AuctionLobby.Lock()
 	api.AuctionLobby.Rooms[product_id] = auctionRoom
 	api.AuctionLobby.Unlock()
 
-	utils.EncodeJSON(w, http.StatusCreated, utils.Response{Message: "Auction has started with success"})
+	utils.EncodeJSON(w, http.StatusCreated,
+		utils.Response{
+			Message: "Auction has started with success",
+			Data:    map[string]uuid.UUID{"product_id": product_id},
+		},
+	)
 }

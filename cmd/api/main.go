@@ -46,8 +46,10 @@ func main() {
 		Router:         chi.NewMux(),
 		UsersService:   services.NewUsersService(p),
 		ProductService: services.NewProductService(p),
+		BidsService:    services.NewBidsService(p),
 		Sessions:       s,
 		WsUpgrade:      websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
+		AuctionLobby:   services.AuctionLobby{Rooms: make(map[uuid.UUID]*services.AuctionRoom)},
 	}
 	api.BindRoutes()
 
