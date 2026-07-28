@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/matheusburey/api-restful-go/internal/services"
 	"github.com/matheusburey/api-restful-go/internal/usecase/users"
 	"github.com/matheusburey/api-restful-go/internal/utils"
@@ -32,7 +31,7 @@ func (api *Api) HandlerLoginUser(w http.ResponseWriter, r *http.Request) {
 		utils.EncodeJSON(w, http.StatusInternalServerError, utils.Response{Error: "internal server error"})
 		return
 	}
-	api.Sessions.Put(r.Context(), "AuthenticatedUserID", user_id)
+	api.Sessions.Put(r.Context(), sessionAuthenticatedUserIDKey, user_id)
 	utils.EncodeJSON(w, http.StatusOK, utils.Response{Message: "success"})
 }
 
@@ -42,7 +41,7 @@ func (api *Api) HandlerLogoutUser(w http.ResponseWriter, r *http.Request) {
 		utils.EncodeJSON(w, http.StatusInternalServerError, utils.Response{Error: "internal server error"})
 		return
 	}
-	api.Sessions.Remove(r.Context(), "AuthenticatedUserID")
+	api.Sessions.Remove(r.Context(), sessionAuthenticatedUserIDKey)
 	utils.EncodeJSON(w, http.StatusOK, utils.Response{Message: "success"})
 }
 
@@ -67,7 +66,7 @@ func (api *Api) HandlerSignupUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) HandlerDeleteUser(w http.ResponseWriter, r *http.Request) {
-	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	id, ok := AuthenticatedUserID(r.Context())
 	if !ok {
 		utils.EncodeJSON(w, http.StatusUnauthorized, utils.Response{Error: "unauthorized "})
 		return
@@ -84,7 +83,7 @@ func (api *Api) HandlerDeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) HandlerUpdateUser(w http.ResponseWriter, r *http.Request) {
-	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	id, ok := AuthenticatedUserID(r.Context())
 	if !ok {
 		utils.EncodeJSON(w, http.StatusUnauthorized, utils.Response{Error: "unauthorized "})
 		return

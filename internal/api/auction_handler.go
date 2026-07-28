@@ -28,7 +28,7 @@ func (api *Api) HandlerSubscribeUserToAuction(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	id, ok := AuthenticatedUserID(r.Context())
 	if !ok {
 		utils.EncodeJSON(w, http.StatusUnauthorized, utils.Response{Error: "unauthorized "})
 		return

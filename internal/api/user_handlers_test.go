@@ -39,14 +39,14 @@ func jsonRequest(t *testing.T, method, target string, payload any) *http.Request
 
 // newAuthenticatedRequest logs userID into sessions via a throwaway request,
 // then attaches the resulting session cookie to a fresh request for target,
-// so handlers reading api.Sessions.Get(ctx, "AuthenticatedUserID") see it set.
+// so AuthMiddleware sees it and attaches userID to the request context.
 // payload may be nil for requests without a body.
 func newAuthenticatedRequest(t *testing.T, sessions *scs.SessionManager, userID uuid.UUID, method, target string, payload any) *http.Request {
 	t.Helper()
 
 	seedRec := httptest.NewRecorder()
 	sessions.LoadAndSave(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessions.Put(r.Context(), "AuthenticatedUserID", userID)
+		sessions.Put(r.Context(), sessionAuthenticatedUserIDKey, userID)
 	})).ServeHTTP(seedRec, httptest.NewRequest(method, target, nil))
 
 	var req *http.Request
@@ -302,7 +302,7 @@ func TestHandlerDeleteUser(t *testing.T) {
 
 		req := newAuthenticatedRequest(t, sessions, userID, "DELETE", "/api/v1/users", nil)
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerDeleteUser)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerDeleteUser))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusNoContent, rec.Body)
@@ -325,7 +325,7 @@ func TestHandlerDeleteUser(t *testing.T) {
 
 		req := newAuthenticatedRequest(t, sessions, uuid.New(), "DELETE", "/api/v1/users", nil)
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerDeleteUser)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerDeleteUser))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusNotFound, rec.Body)
@@ -373,7 +373,7 @@ func TestHandlerUpdateUser(t *testing.T) {
 		req := newAuthenticatedRequest(t, sessions, uuid.New(), "PUT", "/api/v1/users", invalidPayload)
 
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerUpdateUser)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerUpdateUser))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusBadRequest, rec.Body)
@@ -396,7 +396,7 @@ func TestHandlerUpdateUser(t *testing.T) {
 		req := newAuthenticatedRequest(t, sessions, userID, "PUT", "/api/v1/users", validPayload)
 
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerUpdateUser)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerUpdateUser))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusOK, rec.Body)
@@ -425,7 +425,7 @@ func TestHandlerUpdateUser(t *testing.T) {
 		req := newAuthenticatedRequest(t, sessions, uuid.New(), "PUT", "/api/v1/users", validPayload)
 
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerUpdateUser)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerUpdateUser))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusInternalServerError, rec.Body)

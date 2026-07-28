@@ -18,7 +18,7 @@ func (api *Api) HandlerCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, ok := api.Sessions.Get(r.Context(), "AuthenticatedUserID").(uuid.UUID)
+	id, ok := AuthenticatedUserID(r.Context())
 	if !ok {
 		utils.EncodeJSON(w, http.StatusUnauthorized, utils.Response{Error: "unauthorized "})
 		return

@@ -93,7 +93,7 @@ func TestHandlerCreateProduct(t *testing.T) {
 
 		req := newAuthenticatedRequest(t, sessions, sellerID, "POST", "/api/v1/products", validPayload)
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerCreateProduct)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerCreateProduct))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusCreated, rec.Body)
@@ -121,7 +121,7 @@ func TestHandlerCreateProduct(t *testing.T) {
 
 		req := newAuthenticatedRequest(t, sessions, uuid.New(), "POST", "/api/v1/products", validPayload)
 		rec := httptest.NewRecorder()
-		sessions.LoadAndSave(http.HandlerFunc(a.HandlerCreateProduct)).ServeHTTP(rec, req)
+		sessions.LoadAndSave(a.AuthMiddleware(http.HandlerFunc(a.HandlerCreateProduct))).ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("got status %d, want %d (body: %s)", rec.Code, http.StatusInternalServerError, rec.Body)
