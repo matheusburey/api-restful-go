@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
 )
 
@@ -15,13 +14,19 @@ var (
 	ErrProductNotFound = errors.New("product not found")
 )
 
-type ProductService struct {
-	p *pgxpool.Pool
-	q *pgstore.Queries
+// productStore is the slice of pgstore.Queries that ProductService actually
+// needs, narrow enough that tests can fake it directly without a real DB.
+type productStore interface {
+	CreateProduct(ctx context.Context, arg pgstore.CreateProductParams) (uuid.UUID, error)
+	GetProductByID(ctx context.Context, id uuid.UUID) (pgstore.Product, error)
 }
 
-func NewProductService(p *pgxpool.Pool) ProductService {
-	return ProductService{p: p, q: pgstore.New(p)}
+type ProductService struct {
+	q productStore
+}
+
+func NewProductService(q productStore) ProductService {
+	return ProductService{q: q}
 }
 
 func (s ProductService) CreateProduct(
