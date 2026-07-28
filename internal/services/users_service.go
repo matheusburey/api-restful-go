@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,13 +17,21 @@ var (
 	ErrInternal           = errors.New("internal server error")
 )
 
-type UsersService struct {
-	p *pgxpool.Pool
-	q *pgstore.Queries
+// usersStore is the slice of pgstore.Queries that UsersService actually needs,
+// narrow enough that tests can fake it directly without going through pgx.
+type usersStore interface {
+	CreateUser(ctx context.Context, arg pgstore.CreateUserParams) (uuid.UUID, error)
+	GetUserByEmail(ctx context.Context, email string) (pgstore.User, error)
+	UpdateUser(ctx context.Context, arg pgstore.UpdateUserParams) (pgstore.User, error)
+	DeleteUser(ctx context.Context, id uuid.UUID) error
 }
 
-func NewUsersService(p *pgxpool.Pool) UsersService {
-	return UsersService{p: p, q: pgstore.New(p)}
+type UsersService struct {
+	q usersStore
+}
+
+func NewUsersService(q usersStore) UsersService {
+	return UsersService{q: q}
 }
 
 func (us *UsersService) CreateUser(ctx context.Context, name, email, bio, password string) (uuid.UUID, error) {

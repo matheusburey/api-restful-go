@@ -17,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/matheusburey/api-restful-go/internal/api"
 	"github.com/matheusburey/api-restful-go/internal/services"
+	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
 )
 
 func main() {
@@ -42,11 +43,13 @@ func main() {
 	s.Cookie.HttpOnly = true
 	s.Cookie.SameSite = http.SameSiteLaxMode
 
+	q := pgstore.New(p)
+
 	api := api.Api{
 		Router:         chi.NewMux(),
-		UsersService:   services.NewUsersService(p),
-		ProductService: services.NewProductService(p),
-		BidsService:    services.NewBidsService(p),
+		UsersService:   services.NewUsersService(q),
+		ProductService: services.NewProductService(q),
+		BidsService:    services.NewBidsService(q),
 		Sessions:       s,
 		WsUpgrade:      websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 		AuctionLobby:   services.AuctionLobby{Rooms: make(map[uuid.UUID]*services.AuctionRoom)},
