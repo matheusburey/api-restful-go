@@ -6,19 +6,25 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matheusburey/api-restful-go/internal/store/pgstore"
 )
 
 var ErrBidIsTooLow = errors.New("bid is too low")
 
-type BidsService struct {
-	p *pgxpool.Pool
-	q *pgstore.Queries
+// bidsStore is the slice of pgstore.Queries that BidsService actually needs,
+// narrow enough that tests can fake it directly without a real DB.
+type bidsStore interface {
+	GetProductByID(ctx context.Context, id uuid.UUID) (pgstore.Product, error)
+	GetHighestBidByProductID(ctx context.Context, productID uuid.UUID) (pgstore.Bid, error)
+	CreateBid(ctx context.Context, arg pgstore.CreateBidParams) (pgstore.Bid, error)
 }
 
-func NewBidsService(p *pgxpool.Pool) BidsService {
-	return BidsService{p: p, q: pgstore.New(p)}
+type BidsService struct {
+	q bidsStore
+}
+
+func NewBidsService(q bidsStore) BidsService {
+	return BidsService{q: q}
 }
 
 func (bs BidsService) PlaceBid(
