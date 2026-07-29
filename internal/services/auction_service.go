@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"sync"
@@ -100,12 +101,19 @@ func (c *Client) ReadEventLoop() {
 		var msg Message
 
 		if err := c.Conn.ReadJSON(&msg); err != nil {
+			var syntaxErr *json.SyntaxError
+			var typeErr *json.UnmarshalTypeError
+			if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) {
+				c.Room.Broadcast <- Message{Kind: InvalidJSON, Message: "invalid json", UserId: c.UserId}
+				continue
+			}
+			// Any other error means the connection itself is done (closed,
+			// timed out, reset, ...), so the loop must exit here instead of
+			// spinning forever treating every subsequent read as InvalidJSON.
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				slog.Error("Unexpected close error", "error", err)
-				return
 			}
-			c.Room.Broadcast <- Message{Kind: InvalidJSON, Message: "invalid json", UserId: c.UserId}
-			continue
+			return
 		}
 		msg.UserId = c.UserId
 		c.Room.Broadcast <- msg
